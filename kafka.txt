@@ -1,0 +1,71 @@
+﻿https://www.mtyun.com/library/how-to-install-kafka-on-centos7
+http://www.jianshu.com/p/dc4770fc34b6
+step0:
+tar zxvf kafka_2.11-0.8.2.2.tgz
+mv kafka_2.11-0.8.2.2 kafka
+cp -r kafka /opt/
+cd /opt/kafka
+step1:
+ startup zookeeper
+   zookeeper-server-start.sh -daemon ../config/zookeeper.properties
+ startup kafka 
+   kafka-server-start.sh ../config/server.properties 
+  create topic
+   bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
+查看topic：   
+   bin/kafka-topics.sh --list --zookeeper localhost:2181
+   
+   4.产生消息
+   bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test 
+   5.消费消息
+   bin/kafka-console-consumer.sh --zookeeper localhost:2181 --topic test --from-beginning
+   
+   
+
+   单机多broker
+   cd /opt/kafka
+   cp config/server.properties config/server-1.properties 
+    config/server-1.properties:
+    broker.id=1
+    port=9093
+    log.dir=/tmp/kafka-logs-1
+	bin/kafka-server-start.sh config/server-1.properties &
+
+1.查看当前服务器中的所有topic
+./kafka-topics.sh --list -zookeeper 10.35.63.91:2181
+2.查看消费位置
+./kafka-run-class.sh kafka.tools.ConsumerOffsetChecker --zookeeper 10.35.63.91:2181 --group test-consumer-group
+
+
+
+3.查看分区数据
+ a.查看log文件
+ sh kafka-run-class.sh kafka.tools.DumpLogSegments --files ../data/node0log/hahatopic-1/00000000000000000000.log --print-data-log
+  sh kafka-topics.sh --zookeeper 10.35.63.91:2181 --describe --topic hahatopic
+ 查看消息内容
+ sh kafka-run-class.sh kafka.tools.DumpLogSegments --deep-iteration --print-data-log --files ../data/node0log/hahatopic-1/00000000000000000000.log | head -n 4
+ b.查看index文件
+  sh kafka-run-class.sh kafka.tools.DumpLogSegments --deep-iteration --print-data-log --files ../data/node0log/hahatopic-1/00000000000000000000.index | head -n 4
+ c.查看timeindex文件
+  sh kafka-run-class.sh kafka.tools.DumpLogSegments --deep-iteration --print-data-log --files ../data/node0log/hahatopic-1/0000000000000
+0000000.timeindex | head -n 4
+sh kafka-run-class.sh kafka.tools.ConsumerOffsetChecker --> kafka-consumer-groups.sh
+sh kafka-run-class.sh kafka.tools.DumpLogSegments
+sh kafka-run-class.sh kafka.tools.ExportZkOffsets
+sh kafka-run-class.sh kafka.tools.GetOffsetShell
+sh kafka-run-class.sh kafka.tools.ImportZkOffsets
+sh kafka-run-class.sh kafka.tools.JmxTool
+sh kafka-run-class.sh kafka.tools.KafkaMigrationTool
+sh kafka-run-class.sh kafka.tools.MirrorMaker
+sh kafka-run-class.sh kafka.tools.ReplayLogProducer
+sh kafka-run-class.sh kafka.tools.SimpleConsumerShell
+sh kafka-run-class.sh kafka.tools.StateChangeLogMerger
+sh kafka-run-class.sh kafka.tools.UpdateOffsetsInZK
+sh kafka-run-class.sh kafka.tools.VerifyConsumerRebalance
+
+
+4.查询各分区消息数量
+sh kafka-run-class.sh kafka.tools.GetOffsetShell --broker-list 10.35.63.91:9092,10.35.63.91:9093,10.35.63.91:9094 --topic hahatopic --time -1
+5.
+
+

@@ -1,0 +1,245 @@
+﻿http://www.jianshu.com/p/dc4770fc34b6
+demo
+http://blog.csdn.net/GK_kk/article/details/69396400
+step0:
+wget http://www-eu.apache.org/dist/zookeeper/zookeeper-3.4.10/zookeeper-3.4.10.tar.gz
+step1:
+tar -xzf zookeeper-3.4.10.tar.gz
+mv zookeeper-3.4.10 /opt/zookeeper/
+cd /opt/zookeeper/
+mv zookeeper-3.4.10 zookeeper00
+
+mkdir /opt/zookeeper/data
+mkdir /opt/zookeeper/data/data00
+ mkdir /opt/zookeeper/data/data00/myid
+ echo 0>/opt/zookeeper/data/data00/myid
+mkdir /opt/zookeeper/data/data01
+ mkdir /opt/zookeeper/data/data01/myid
+ echo 1>/opt/zookeeper/data/data01/myid
+mkdir /opt/zookeeper/data/data02
+ mkdir /opt/zookeeper/data/data02/myid
+ echo  2>/opt/zookeeper/data/data02/myid
+cd /opt/zookeeper/conf
+mv zoo_sample.cfg zoo.cfg
+vi zoo.cfg
+ tickTime=2000
+ #心跳时间，单位：毫秒
+
+ initLimit=10 
+ #Follower在启动时需要在10个心跳时间内从Leader同步数据
+
+ syncLimit=5 
+ #超过5个心跳时间收不到Follower的响应，就认为此Follower已经下线
+
+ dataDir=/opt/zookeeper/data/data00
+ #zookeeper存储数据的目录
+
+ clientPort=2181 
+ #zookeeper服务端口
+
+ server.0=10.35.63.91:20881:30881
+
+ server.1=10.35.63.91:20882:30882
+
+ server.2=10.35.63.91:20883:30883
+
+
+cp zookeeper00/ zookeeper01
+cp zookeeper01/ zookeeper02
+
+
+
+zookeeper01/conf/zoo.cfg
+
+
+ tickTime=2000
+
+ initLimit=10
+
+ syncLimit=5 
+
+ dataDir=/opt/zookeeper/data/data01 
+ 
+clientPort=2182
+
+ server.0=10.35.63.91:20881:30881
+
+ server.1=10.35.63.91:20882:30882
+
+ server.2=10.35.63.91:20883:30883
+
+zookeeper02/conf/zoo.cfg
+ 
+
+tickTime=2000
+
+ initLimit=10
+
+ syncLimit=5 
+
+ dataDir=/opt/zookeeper/data/data02
+ 
+clientPort=2183
+ 
+server.0=10.35.63.91:20881:30881
+
+ server.1=10.35.63.91:20882:30882
+
+ server.2=10.35.63.91:20883:30883
+
+
+
+ps -ef | grep "kafka" | grep -v grep | awk '{print $2}'
+
+
+kafka broker 集群搭建
+
+wget http://apache.opencas.org/kafka/0.9.0.1/kafka_2.11-0.9.0.1.tgz
+tar -zxvf kafka_2.11-0.9.0.1.tgz
+mv kafka_2.11-0.9.0.1 /opt/
+mv /opt/kafka_2.11-0.9.0.1/ /opt/kafka
+cd /opt/kafka/conf
+vi server.properties
+
+broker.id=0 
+#整个集群内唯一id号，整数，一般从0开始
+
+listeners=PLAINTEXT://10.35.63.91:9092 
+#协议、当前broker机器ip、端口，此值可以配置多个，应该跟SSL等有关系，更多用法尚未弄懂，这里修改为ip和端口。
+
+port=9092 
+#broker端口
+
+host.name=10.35.63.91
+ #broker 机器ip
+
+log.dirs=/opt/kafka/data/node0log
+ #kafka存储数据的目录
+
+zookeeper.connect=10.35.63.91:2181,10.35.63.91:2182,10.35.63.91:2183 #zookeeper 集群列表
+
+
+
+
+
+cp server.properties server-1.properties 
+cp server.properties server-2.properties 
+
+
+server-1.properties
+broker.id=1 
+
+listeners=PLAINTEXT://10.35.63.91:9093
+
+port=9093 
+
+host.name=10.35.63.91
+log.dirs=/opt/kafka/data/node1log
+zookeeper.connect=10.35.63.91:2181,10.35.63.91:2182,10.35.63.91:2183
+
+
+server-2.properties
+broker.id=2 
+
+
+listeners=PLAINTEXT://10.35.63.91:9094
+
+port=9094 
+
+host.name=10.35.63.91
+log.dirs=/opt/kafka/data/node2log
+zookeeper.connect=10.35.63.91:2181,10.35.63.91:2182,10.35.63.91:2183
+
+
+
+
+
+
+
+
+zookeeper集群启动
+zookeeper00/bin/zkServer.sh start
+zookeeper01/bin/zkServer.sh start
+zookeeper02/bin/zkServer.sh start
+ps -ef | grep zoo.cfg
+
+
+kafka 集群启动
+
+bin/kafka-server-start.sh -daemon config/server.properties
+
+bin/kafka-server-start.sh -daemon config/server-1.properties
+
+bin/kafka-server-start.sh -daemon config/server-2.properties
+
+
+ps -ef | grep config/server
+
+测试
+
+为了简单起见，这里通过命令行的方式启动生产者和消费者进行测试。
+
+1>创建主题
+进入到kafka目录，创建“test5”topic主题：分区为6、备份为3的
+bin/kafka-topics.sh --create --zookeeper 10.35.63.91:2181,10.35.63.91:2182,10.35.63.91:2183
+ --replication-factor 3 --partitions 6 --topic demotopic
+ ./kafka-topics.sh --create --zookeeper 10.35.63.91:2181,10.35.63.91:2182,10.35.63.91:2183 --replication-factor 3 --partitions 6 --topic demotopic
+
+ ./kafka-topics.sh --create --zookeeper 10.35.63.91:2181,10.35.63.91:2182,10.35.63.91:2183 --replication-factor 1 --partitions 6 --topic hahatopic
+./kafka-topics.sh --create --zookeeper 10.35.63.91:2181,10.35.63.91:2182,10.35.63.91:2183 --replication-factor 2 --partitions 6 --topic hahatopic
+查看"test5"主题详情
+
+bin/kafka-topics.sh --describe --zookeeper  10.35.63.91:2181 --topic test5
+  删除topic
+  ./bin/kafka-topics.sh  --delete --zookeeper 10.35.63.91:2181  --topic test5
+  ./bin/kafka-topics.sh  --delete --zookeeper 10.35.63.91:2181  --topic hahatopic
+ sh kafka-topics.sh  --delete --zookeeper 10.35.63.91:2181  --topic hahatopic
+ 查看topics
+  sh kafka-topics.sh  --list --zookeeper 10.35.63.91:2181
+启动生产者、消费者
+
+启动生产者
+bin/kafka-console-producer.sh --broker-list 10.35.63.91:9092 --topic test5
+启动消费者（在新的ssh连接窗口）
+bin/kafka-console-consumer.sh --zookeeper 10.35.63.91:2181 --topic test5 --from-beginning
+
+
+
+模拟kafka broker集群某个节点宕机
+模拟zookeeper集群某个节点宕机
+1.查看topic的详细信息
+./kafka-topics.sh -zookeeper 10.35.63.91:2181 -describe -topic testKJ1
+2、为topic增加副本
+./kafka-reassign-partitions.sh -zookeeper127.0.0.1:2181-reassignment-json-file json/partitions-to-move.json -execute
+3、创建topic
+
+
+./kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic testKJ1
+
+
+4、为topic增加partition
+
+ 
+./bin/kafka-topics.sh –zookeeper127.0.0.1:2181–alter –partitions 20 –topic testKJ1
+
+
+5、kafka生产者客户端命令
+
+
+./kafka-console-producer.sh --broker-list localhost:9092--topic testKJ1
+
+
+6、kafka消费者客户端命令
+
+
+./kafka-console-consumer.sh -zookeeper localhost:2181 --from-beginning --topic testKJ1
+
+
+7、kafka服务启动
+./kafka-server-start.sh -daemon ../config/server.properties
+8、下线broker
+./kafka-run-class.sh kafka.admin.ShutdownBroker --zookeeper127.0.0.1:2181--broker #brokerId# --num.retries3--retry.interval.ms60
+shutdown broker
+9、删除topic
+
+./kafka-run-class.sh kafka.admin.DeleteTopicCommand --topic testKJ1 --zookeeper127.0.0.1:2181
